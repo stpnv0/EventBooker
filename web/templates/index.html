@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventBooker</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header>
+    <h1>EventBooker</h1>
+    <nav>
+        <button class="tab active" data-tab="user">Пользователь</button>
+        <button class="tab" data-tab="admin">Администратор</button>
+    </nav>
+</header>
+
+<main>
+    <!-- ═══ Панель пользователя ═══ -->
+    <section id="user" class="panel active">
+
+        <div class="card">
+            <h2>Вход / Регистрация</h2>
+            <div class="form-row">
+                <input type="text" id="username" placeholder="Имя пользователя">
+                <input type="number" id="telegram-chat-id" placeholder="Telegram Chat ID (необязательно)">
+                <button onclick="handleRegisterUser()">Войти / Зарегистрироваться</button>
+            </div>
+            <div id="current-user" class="info-box hidden"></div>
+        </div>
+
+        <div class="card">
+            <h2>Мероприятия</h2>
+            <button class="btn-secondary" onclick="handleLoadEvents()">Обновить</button>
+            <div id="events-list" class="list"></div>
+        </div>
+
+        <div class="card" id="my-bookings-card" style="display:none">
+            <h2>Мои бронирования</h2>
+            <button class="btn-secondary" onclick="handleLoadMyBookings()">Обновить</button>
+
+            <div id="pending-bookings-section" class="bookings-section hidden">
+                <h3 class="section-title pending-title">⏳ Ожидают подтверждения</h3>
+                <div id="pending-bookings" class="list"></div>
+            </div>
+
+            <div id="confirmed-bookings-section" class="bookings-section hidden">
+                <h3 class="section-title confirmed-title">Подтверждённые</h3>
+                <div id="confirmed-bookings" class="list"></div>
+            </div>
+
+            <div id="cancelled-bookings-section" class="bookings-section hidden">
+                <h3 class="section-title cancelled-title">Отменённые</h3>
+                <div id="cancelled-bookings" class="list"></div>
+            </div>
+
+            <div id="no-bookings" class="empty-state hidden">
+                У вас пока нет бронирований
+            </div>
+        </div>
+
+    </section>
+
+    <!-- ═══ Панель администратора ═══ -->
+    <section id="admin" class="panel">
+
+        <div class="card">
+            <h2>Создать мероприятие</h2>
+            <div class="form-grid">
+                <label>
+                    Название
+                    <input type="text" id="event-title" placeholder="Концерт группы X">
+                </label>
+                <label>
+                    Описание
+                    <textarea id="event-description" placeholder="Описание мероприятия"></textarea>
+                </label>
+                <label>
+                    Дата и время
+                    <input type="datetime-local" id="event-date">
+                </label>
+                <label>
+                    Количество мест
+                    <input type="number" id="event-spots" min="1" value="50">
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="event-requires-payment" checked>
+                    Требуется подтверждение оплаты
+                </label>
+                <label>
+                    Время на оплату (минуты)
+                    <input type="number" id="event-ttl" min="1" value="20">
+                </label>
+                <button onclick="handleCreateEvent()">Создать</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Детали мероприятий</h2>
+            <button class="btn-secondary" onclick="handleLoadAdminEvents()">Обновить</button>
+            <div id="admin-events-list" class="list"></div>
+        </div>
+
+        <div class="card">
+            <h2>Пользователи</h2>
+            <button class="btn-secondary" onclick="handleLoadUsers()">Обновить</button>
+            <div id="users-list" class="list"></div>
+        </div>
+
+    </section>
+</main>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
