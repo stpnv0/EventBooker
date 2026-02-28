@@ -3,6 +3,13 @@ let eventsCache = {};
 
 const API = '/api';
 
+// ── HTML escape ──
+function esc(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
 async function api(method, path, body = null) {
     const opts = {
         method,
@@ -116,9 +123,9 @@ function setCurrentUser(user) {
     const box = document.getElementById('current-user');
     box.classList.remove('hidden');
     box.innerHTML = `
-        <strong>👤 ${user.username}</strong>
-        <span class="user-id">ID: ${user.id.slice(0, 8)}...</span>
-        ${user.telegram_chat_id ? `<span class="user-tg">📱 ${user.telegram_chat_id}</span>` : ''}
+        <strong>👤 ${esc(user.username)}</strong>
+        <span class="user-id">ID: ${esc(user.id.slice(0, 8))}...</span>
+        ${user.telegram_chat_id ? `<span class="user-tg">📱 ${esc(String(user.telegram_chat_id))}</span>` : ''}
     `;
 
     document.getElementById('my-bookings-card').style.display = 'block';
@@ -160,13 +167,13 @@ async function loadEvents() {
 
             // TTL показываем только если требуется подтверждение
             const ttlInfo = d.event.requires_payment
-                ? `<span>⏰ ${d.event.booking_ttl}</span>`
+                ? `<span>⏰ ${esc(d.event.booking_ttl)}</span>`
                 : '<span class="badge badge-confirmed">Без подтверждения</span>';
 
             return `
                 <div class="list-item event-item ${spotsClass}">
                     <div class="event-header">
-                        <h3>${d.event.title}</h3>
+                        <h3>${esc(d.event.title)}</h3>
                         ${bookBtn}
                     </div>
                     <div class="meta">
@@ -265,10 +272,10 @@ function renderBookingSection(status, bookings, showConfirmBtn) {
             : `<span class="time-info">${formatDate(b.created_at)}</span>`;
 
         return `
-            <div class="list-item booking-card booking-${status}">
+            <div class="list-item booking-card booking-${esc(status)}">
                 <div class="booking-header">
                     <div>
-                        <h3>${eventName}</h3>
+                        <h3>${esc(eventName)}</h3>
                         ${eventDate ? `<span class="booking-event-date">📅 ${eventDate}</span>` : ''}
                     </div>
                     ${confirmBtn}
@@ -358,7 +365,7 @@ async function loadAdminEvents() {
                        <strong>Бронирования (${d.bookings.length}):</strong>
                        ${d.bookings.map(b => `
                            <div class="booking-item">
-                               👤 ${b.user_id.slice(0, 8)}...
+                               👤 ${esc(b.user_id.slice(0, 8))}...
                                ${statusBadge(b.status)}
                                <small>${formatDate(b.created_at)}</small>
                            </div>
@@ -367,12 +374,12 @@ async function loadAdminEvents() {
                 : '<div class="bookings-list"><em>Нет бронирований</em></div>';
 
             const confirmInfo = d.event.requires_payment
-                ? `<span>⏰ TTL: ${d.event.booking_ttl}</span>`
+                ? `<span>⏰ TTL: ${esc(d.event.booking_ttl)}</span>`
                 : '<span class="badge badge-confirmed">Без подтверждения</span>';
 
             return `
                 <div class="list-item">
-                    <h3>${d.event.title}</h3>
+                    <h3>${esc(d.event.title)}</h3>
                     <div class="meta">
                         <span>📅 ${formatDate(d.event.event_date)}</span>
                         <span class="badge badge-spots">
@@ -381,7 +388,7 @@ async function loadAdminEvents() {
                         ${confirmInfo}
                     </div>
                     <p style="margin-top:0.5rem;font-size:0.9rem;color:#555">
-                        ${d.event.description}
+                        ${esc(d.event.description)}
                     </p>
                     ${bookingsHtml}
                 </div>
@@ -407,11 +414,11 @@ async function handleLoadUsers() {
 
         list.innerHTML = users.map(u => `
             <div class="list-item">
-                <h3>👤 ${u.username}</h3>
+                <h3>👤 ${esc(u.username)}</h3>
                 <div class="meta">
-                    <span>ID: ${u.id.slice(0, 8)}...</span>
+                    <span>ID: ${esc(u.id.slice(0, 8))}...</span>
                     ${u.telegram_chat_id
-            ? `<span>📱 ${u.telegram_chat_id}</span>`
+            ? `<span>📱 ${esc(String(u.telegram_chat_id))}</span>`
             : '<span style="color:#999">Telegram не привязан</span>'
         }
                     <span>📅 ${formatDate(u.created_at)}</span>
