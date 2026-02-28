@@ -1,0 +1,30 @@
+packages:
+  github.com/stpnv0/EventBooker/internal/service/ports:
+    config:
+      dir: "{{.InterfaceDir}}/mocks"
+      template: testify
+      pkgname: mocks
+      filename: "mocks.go"
+    interfaces:
+      EventRepo:
+      BookingRepo:
+      UserRepo:
+      BookingNotifier:
+  github.com/stpnv0/EventBooker/internal/handler:
+    config:
+      dir: "{{.InterfaceDir}}/mocks"
+      template: testify
+      pkgname: mocks
+      filename: "mocks.go"
+    interfaces:
+      EventSvc:
+      BookingSvc:
+      UserSvc:
+  github.com/stpnv0/EventBooker/internal/scheduler:
+    config:
+      dir: "{{.InterfaceDir}}/mocks"
+      template: testify
+      pkgname: mocks
+      filename: "mocks.go"
+    interfaces:
+      BookingCanceller:
