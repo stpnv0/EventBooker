@@ -8,18 +8,18 @@ import (
 	"github.com/wb-go/wbf/logger"
 )
 
-type bookingCanceller interface {
+type BookingCanceller interface {
 	CancelExpired(ctx context.Context) ([]*domain.Booking, error)
 }
 
 type Scheduler struct {
-	bookingService bookingCanceller
+	bookingService BookingCanceller
 	interval       time.Duration
 	logger         logger.Logger
 }
 
 func New(
-	bookingService bookingCanceller,
+	bookingService BookingCanceller,
 	interval time.Duration,
 	logger logger.Logger,
 ) *Scheduler {

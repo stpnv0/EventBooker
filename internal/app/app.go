@@ -65,8 +65,9 @@ func (a *App) initDB() error {
 		a.cfg.Postgres.DSN(),
 		nil,
 		&dbpg.Options{
-			MaxOpenConns: a.cfg.Postgres.MaxOpenConns,
-			MaxIdleConns: a.cfg.Postgres.MaxIdleConns,
+			MaxOpenConns:    a.cfg.Postgres.MaxOpenConns,
+			MaxIdleConns:    a.cfg.Postgres.MaxIdleConns,
+			ConnMaxLifetime: a.cfg.Postgres.ConnMaxLifetime,
 		},
 	)
 	if err != nil {

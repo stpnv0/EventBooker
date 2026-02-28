@@ -64,7 +64,7 @@ func (s *BookingService) Book(ctx context.Context, eventID, userID string) (*dom
 		return nil, fmt.Errorf("create booking: %w", err)
 	}
 
-	s.logger.Info("booking created",
+	s.logger.LogAttrs(ctx, logger.InfoLevel, "booking created",
 		logger.String("booking_id", booking.ID),
 		logger.String("event_id", eventID),
 		logger.String("user_id", userID),
@@ -80,7 +80,6 @@ func (s *BookingService) Book(ctx context.Context, eventID, userID string) (*dom
 }
 
 func (s *BookingService) Confirm(ctx context.Context, eventID, userID string) error {
-	// проверка TTL и подтверждения
 	event, err := s.eventRepo.GetByID(ctx, eventID)
 	if err != nil {
 		return fmt.Errorf("get event: %w", err)
@@ -90,34 +89,19 @@ func (s *BookingService) Confirm(ctx context.Context, eventID, userID string) er
 		return fmt.Errorf("%w: this event does not require payment", domain.ErrValidation)
 	}
 
-	// проверка брони
-	booking, err := s.bookingRepo.GetByEventAndUser(ctx, eventID, userID)
-	if err != nil {
-		return fmt.Errorf("get booking: %w", err)
-	}
-
-	if booking.Status != domain.BookingStatusPending {
-		return domain.ErrBookingNotPending
-	}
-
-	if time.Since(booking.CreatedAt) > event.BookingTTL {
-		return domain.ErrBookingExpired
-	}
-
+	// Проверка статуса, TTL и обновление — атомарно в репозитории
 	if err = s.bookingRepo.Confirm(ctx, eventID, userID); err != nil {
 		return fmt.Errorf("confirm booking: %w", err)
 	}
 
-	s.logger.Info("booking confirmed",
-		logger.String("booking_id", booking.ID),
+	s.logger.LogAttrs(ctx, logger.InfoLevel, "booking confirmed",
 		logger.String("event_id", eventID),
 		logger.String("user_id", userID),
 	)
 
-	// notify
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
-		s.logger.Error("failed to get user for notification",
+		s.logger.LogAttrs(ctx, logger.ErrorLevel, "failed to get user for notification",
 			logger.String("user_id", userID),
 			logger.String("error", err.Error()),
 		)
@@ -136,7 +120,7 @@ func (s *BookingService) CancelExpired(ctx context.Context) ([]*domain.Booking, 
 	}
 
 	if len(cancelled) > 0 {
-		s.logger.Info("expired bookings cancelled",
+		s.logger.LogAttrs(ctx, logger.InfoLevel, "expired bookings cancelled",
 			logger.Int("count", len(cancelled)),
 		)
 
@@ -150,7 +134,7 @@ func (s *BookingService) notifyCancelled(ctx context.Context, bookings []*domain
 	for _, b := range bookings {
 		user, err := s.userRepo.GetByID(ctx, b.UserID)
 		if err != nil {
-			s.logger.Error("failed to get user for cancel notification",
+			s.logger.LogAttrs(ctx, logger.ErrorLevel, "failed to get user for cancel notification",
 				logger.String("user_id", b.UserID),
 			)
 			continue
@@ -158,7 +142,7 @@ func (s *BookingService) notifyCancelled(ctx context.Context, bookings []*domain
 
 		event, err := s.eventRepo.GetByID(ctx, b.EventID)
 		if err != nil {
-			s.logger.Error("failed to get event for cancel notification",
+			s.logger.LogAttrs(ctx, logger.ErrorLevel, "failed to get event for cancel notification",
 				logger.String("event_id", b.EventID),
 			)
 			continue

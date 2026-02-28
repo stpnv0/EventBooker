@@ -31,7 +31,7 @@ func (s *EventService) CreateEvent(ctx context.Context, input domain.CreateEvent
 	if input.TotalSpots <= 0 {
 		return nil, fmt.Errorf("%w: total_spots must be positive", domain.ErrValidation)
 	}
-	if input.EventDate.Before(time.Now()) {
+	if input.EventDate.Before(time.Now().UTC()) {
 		return nil, fmt.Errorf("%w: event_date must be in the future", domain.ErrValidation)
 	}
 	requiresPayment := true

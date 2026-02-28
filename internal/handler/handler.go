@@ -80,7 +80,7 @@ func (h *Handler) CreateEvent(c *ginext.Context) {
 func (h *Handler) GetEvent(c *ginext.Context) {
 	id := c.Param("id")
 	if _, err := uuid.Parse(id); err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid image id"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid event id"})
 		return
 	}
 
@@ -113,7 +113,7 @@ func (h *Handler) ListEvents(c *ginext.Context) {
 func (h *Handler) BookEvent(c *ginext.Context) {
 	eventID := c.Param("id")
 	if _, err := uuid.Parse(eventID); err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid image id"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid event id"})
 		return
 	}
 
@@ -135,7 +135,7 @@ func (h *Handler) BookEvent(c *ginext.Context) {
 func (h *Handler) ConfirmBooking(c *ginext.Context) {
 	eventID := c.Param("id")
 	if _, err := uuid.Parse(eventID); err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid image id"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid event id"})
 		return
 	}
 
