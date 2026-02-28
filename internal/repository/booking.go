@@ -127,25 +127,65 @@ func (r *BookingRepository) ListByUser(ctx context.Context, userID string) ([]*d
 }
 
 func (r *BookingRepository) Confirm(ctx context.Context, eventID, userID string) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback()
+
+	// Получаем TTL мероприятия
+	var ttlSeconds int64
+	ttlQuery := `SELECT EXTRACT(EPOCH FROM booking_ttl)::bigint FROM events WHERE id = $1`
+	if err = tx.QueryRowContext(ctx, ttlQuery, eventID).Scan(&ttlSeconds); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return domain.ErrEventNotFound
+		}
+		return fmt.Errorf("get event ttl: %w", err)
+	}
+
+	// Атомарно проверяем статус и TTL, обновляем бронь
 	query := `UPDATE bookings
-			  SET status=$4, updated_at=now()
-			  WHERE event_id=$1 AND user_id=$2 AND status=$3`
-	res, err := r.db.ExecWithRetry(
-		ctx, r.strategy, query, eventID, userID,
+			  SET status = $4, updated_at = now()
+			  WHERE event_id = $1
+			    AND user_id = $2
+			    AND status = $3
+			    AND created_at + make_interval(secs => $5) >= now()`
+	res, err := tx.ExecContext(
+		ctx, query, eventID, userID,
 		domain.BookingStatusPending, domain.BookingStatusConfirmed,
+		ttlSeconds,
 	)
 	if err != nil {
 		return fmt.Errorf("confirm booking: %w", err)
 	}
+
 	rows, err := res.RowsAffected()
 	if err != nil {
-		return fmt.Errorf("booking rows affecting: %w", err)
+		return fmt.Errorf("booking rows affected: %w", err)
 	}
 	if rows == 0 {
+		// Определяем причину: бронь не найдена, не pending, или истекла
+		var status string
+		var createdAt time.Time
+		checkQuery := `SELECT status, created_at FROM bookings
+					   WHERE event_id = $1 AND user_id = $2 AND status = ANY($3)
+					   ORDER BY created_at DESC LIMIT 1`
+		scanErr := tx.QueryRowContext(ctx, checkQuery, eventID, userID, pq.Array(domain.ActiveStatuses)).
+			Scan(&status, &createdAt)
+		if scanErr != nil {
+			return domain.ErrBookingNotFound
+		}
+		if status != string(domain.BookingStatusPending) {
+			return domain.ErrBookingNotPending
+		}
+		ttl := time.Duration(ttlSeconds) * time.Second
+		if time.Since(createdAt) > ttl {
+			return domain.ErrBookingExpired
+		}
 		return domain.ErrBookingNotFound
 	}
 
-	return nil
+	return tx.Commit()
 }
 
 func (r *BookingRepository) CancelExpired(ctx context.Context) ([]*domain.Booking, error) {
@@ -159,8 +199,8 @@ func (r *BookingRepository) CancelExpired(ctx context.Context) ([]*domain.Bookin
         RETURNING b.id, b.event_id, b.user_id,
                   b.status, b.created_at, b.updated_at`
 
-	rows, err := r.db.QueryContext(
-		ctx, query,
+	rows, err := r.db.QueryWithRetry(
+		ctx, r.strategy, query,
 		domain.BookingStatusPending, domain.BookingStatusCancelled,
 	)
 	if err != nil {
